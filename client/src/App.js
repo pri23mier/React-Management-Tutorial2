@@ -8,6 +8,7 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableRow from '@material-ui/core/TableRow';
 import {withStyles} from '@material-ui/core/styles';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const styles = theme => ({
   root: {
@@ -17,25 +18,39 @@ const styles = theme => ({
   },
   table: {
     minWidth: 1080
+  }, 
+  progress: {
+    margin: theme.spacing.unit * 2
   }
 })
 
 class App extends Component {
 
   state = {
-    customers: ""
+    customers: "",
+    completed: 0 //progress 0%로부터 시작
   }
 
   componentDidMount(){
-    this.callApi()
+    //0.02초마다 progress함수가 실행
+    this.timer = setInterval(this.progress, 20);
+    //1. 특정뷰의 api를 비동기적으로 호출
+    this.callApi() //progress test  
+      //3. 돌아온 응답의 상태변화를 감지하여 뷰를 갱신
       .then(res => this.setState({customers: res}))
       .catch(err => console.log(err));
   }
 
-  callApi = async () => {
+  callApi = async () => {  //2. 돌아온 응답 
     const response = await fetch('/api/customers');
     const body = await response.json();
     return body;
+  }
+
+  progress =() => {
+    const { completed} = this.state;
+                //값이 0~100까지 왔다갔다 함. 
+    this.setState({ completed: completed >= 100 ? 0 : completed + 1});
   }
 
   render(){
@@ -54,7 +69,8 @@ class App extends Component {
             </TableRow>
           </TableHead>
           <TableBody>
-            {/* 처음엔 목록이 비워있는 상태이니 
+            {/* 4.api 응답결과
+            처음엔 목록이 비워있는 상태이니 
             this.state.customers가 존재할때만 실행 */}
             {this.state.customers ? 
             this.state.customers.map(c => {
@@ -69,7 +85,13 @@ class App extends Component {
                   job={c.job}
                   />
               );
-            }) : ""}
+            }) : 
+            <TableRow>
+              <TableCell colspan="6" align="center">
+                <CircularProgress className={classes.progress} variant="determinate" value={this.state.completed}/>
+              </TableCell>
+            </TableRow>
+            }
           </TableBody>
         </Table>
         
